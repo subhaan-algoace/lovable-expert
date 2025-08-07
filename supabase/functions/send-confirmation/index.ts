@@ -8,8 +8,8 @@ if (Deno.env.get("DENO_DEPLOYMENT_ID") === undefined) {
   await loadEnv({ export: true });
 }
 
-const RESEND_API_KEY = Deno.env.get("re_EMyzm9yu_MHMK22thnVakGymFCfQbkpup");
-const OPENAI_API_KEY = Deno.env.get("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");
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 
 if (!RESEND_API_KEY) {
   throw new Error("Missing RESEND_API_KEY environment variable");
