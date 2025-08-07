@@ -1,7 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
-import { config as loadEnv } from "https://deno.land/std@0.190.0/dotenv/mod.ts";
+import { loadEnv } from "https://deno.land/std@0.190.0/dotenv/mod.ts";
 
 // Load .env file when running locally (not in production)
 if (Deno.env.get("DENO_DEPLOYMENT_ID") === undefined) {
@@ -37,7 +37,7 @@ const generatePersonalizedContent = async (name: string, industry: string) => {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -58,12 +58,7 @@ const generatePersonalizedContent = async (name: string, industry: string) => {
     });
 
     const data = await response.json();
-    if (!response.ok) {
-      console.error('OpenAI API error:', data);
-      throw new Error(data?.error?.message || 'OpenAI API error');
-    }
-    // Fix: Use index 0, not 1
-    return data?.choices?.[0]?.message?.content;
+    return data?.choices[1]?.message?.content;
   } catch (error) {
     console.error('Error generating personalized content:', error);
     // Fallback content
@@ -132,10 +127,11 @@ const handler = async (req: Request): Promise<Response> => {
         ...corsHeaders,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in send-confirmation function:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
