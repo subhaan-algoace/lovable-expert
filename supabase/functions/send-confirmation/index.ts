@@ -1,8 +1,24 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
+import { config as loadEnv } from "https://deno.land/std@0.190.0/dotenv/mod.ts";
 
-const resend = new Resend(Deno.env.get("RESEND_PUBLIC_KEY") || "invalid_key");
+// Load .env file when running locally (not in production)
+if (Deno.env.get("DENO_DEPLOYMENT_ID") === undefined) {
+  await loadEnv({ export: true });
+}
+
+const RESEND_API_KEY = Deno.env.get("re_EMyzm9yu_MHMK22thnVakGymFCfQbkpup");
+const OPENAI_API_KEY = Deno.env.get("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");
+
+if (!RESEND_API_KEY) {
+  throw new Error("Missing RESEND_API_KEY environment variable");
+}
+if (!OPENAI_API_KEY) {
+  throw new Error("Missing OPENAI_API_KEY environment variable");
+}
+
+const resend = new Resend(RESEND_API_KEY);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,7 +37,7 @@ const generatePersonalizedContent = async (name: string, industry: string) => {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -42,7 +58,12 @@ const generatePersonalizedContent = async (name: string, industry: string) => {
     });
 
     const data = await response.json();
-    return data?.choices[1]?.message?.content;
+    if (!response.ok) {
+      console.error('OpenAI API error:', data);
+      throw new Error(data?.error?.message || 'OpenAI API error');
+    }
+    // Fix: Use index 0, not 1
+    return data?.choices?.[0]?.message?.content;
   } catch (error) {
     console.error('Error generating personalized content:', error);
     // Fallback content

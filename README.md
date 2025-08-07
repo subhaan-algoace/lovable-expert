@@ -1,73 +1,92 @@
-# Welcome to your Lovable project
+README - Lead Capture System
 
-## Project info
+Lead Capture System - Expert Test Project
 
-**URL**: https://lovable.dev/projects/94b52f1d-10a5-4e88-9a9c-5c12cf45d83a
+Overview
+This document provides a detailed summary of the primary features, critical bug resolutions, and improvements made to the Lead Capture System developed using React, TypeScript, Supabase, and AI-driven email automation.
 
-## How can I edit this code?
+🔧 Key Fixes Implemented
 
-There are several ways of editing your application.
+1. Lead Storage Malfunction
+   File: `src/components/LeadCaptureForm.tsx`  
+   Severity: Critical  
+   Status: ✅ Resolved
 
-**Use Lovable**
+Issue
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/94b52f1d-10a5-4e88-9a9c-5c12cf45d83a) and start prompting.
+- Lead data was not being saved to the database.
+- Form submissions appeared successful, but no data persistence occurred.
+- Lack of error handling for database insertion failures.
 
-Changes made via Lovable will be committed automatically to this repo.
+Cause
+The function for inserting leads into the Supabase database was missing.
 
-**Use your preferred IDE**
+Resolution
+const { data: insertedData, error: insertError } = await supabase
+.from("leads")
+.insert({
+name: formData.name,
+email: formData.email,
+industry: formData.industry,
+})
+.select()
+.single();
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+if (insertError) {
+console.error("Error inserting lead:", insertError);
+return;
+}
+Outcome 2. Multiple Executions of Email Function
+Issue
+Cause
+Resolution
+try {
+// Step 1: First insert into the database
+const { data: insertedData, error: insertError } = await supabase...
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+if (insertError) return; // Stop if insertion fails
 
-Follow these steps:
+// Step 2: Then call email function
+const { error: emailError } = await supabase.functions.invoke(...)
+} catch (error) {
+console.error("Error in form submission:", error);
+}
+Outcome 3. AI Email Content Formatting Deficiencies
+Issue
+Cause
+Resolution
+// Refined system prompt
+content: 'Write ONLY the email body content (no subject line, no signature, no email formatting). Create energetic, inspiring content that gets people excited about revolutionizing their industry. Keep it under 150 words total. Focus on the personalized message only.'
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+// Post-processing cleanup
+content = content
+.replace(/^Subject:._$/gm, '')
+.replace(/^Best,._$/gm, '')
+  .replace(/^Cheers,.*$/gm, '')
+.replace(/^\[Your Name\]._$/gm, '')
+.replace(/^Innovation Community Team._$/gm, '')
+.trim();
+Outcome 4. User Interface and Experience Enhancements
+Issue
+Cause
+Resolution
+// Introduced loading indicator
+const [isLoading, setIsLoading] = useState(false);
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+// Included toast alerts
+import { toast } from "@/hooks/use-toast";
 
-# Step 3: Install the necessary dependencies.
-npm i
+// User feedback and duplicate email handling
+if (insertError.code === "23505") {
+toast({
+title: "Error inserting lead",
+description: "Email already exists",
+variant: "destructive",
+});
+}
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/94b52f1d-10a5-4e88-9a9c-5c12cf45d83a) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+// Fetch full community count
+const { count: totalLeads, error: countError } = await supabase
+.from("leads")
+.select("\*", { count: "exact", head: true });
+Outcome
