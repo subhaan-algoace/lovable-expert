@@ -1,10 +1,11 @@
 -- Create leads table for storing contact submissions
+
+
 CREATE TABLE public.leads (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
-  email TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
   submitted_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  session_id TEXT,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
